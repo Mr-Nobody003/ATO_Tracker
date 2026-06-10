@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATO Syllabus Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0D1117;
+    --surface: #161B22;
+    --surface2: #1C2333;
+    --border: #30363D;
+    --accent: #7C3AED;
+    --accent-glow: rgba(124,58,237,0.25);
+    --accent-light: #A78BFA;
+    --done: #10B981;
+    --done-bg: rgba(16,185,129,0.12);
+    --warn: #F59E0B;
+    --warn-bg: rgba(245,158,11,0.12);
+    --text: #E6EDF3;
+    --muted: #8B949E;
+    --faint: #484F58;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+  }
+  .logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent-light);
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .logo span { color: var(--muted); font-weight: 400; }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+  .btn-sm {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    font-family: var(--mono);
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent-light); }
+
+  /* ── LAYOUT ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* ── SIDEBAR ── */
+  aside {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 20px;
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  /* Progress Ring */
+  .progress-ring-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 28px;
+  }
+  .ring-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+  }
+  .ring-container svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--border); stroke-width: 8; }
+  .ring-fill {
+    fill: none;
+    stroke: url(#ringGrad);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 326.56;
+    stroke-dashoffset: 326.56;
+    transition: stroke-dashoffset 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .ring-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .ring-pct {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+  }
+  .ring-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .progress-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+    margin-top: 16px;
+  }
+  .stat-box {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .stat-num.done { color: var(--done); }
+  .stat-num.left { color: var(--warn); }
+  .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* Progress bar per paper */
+  .paper-progress { margin-top: 4px; }
+  .paper-progress-bar-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  .paper-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-light));
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  /* Nav tree */
+  .nav-section { margin-bottom: 8px; }
+  .nav-paper-btn {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .nav-paper-btn:hover, .nav-paper-btn.active { background: var(--surface2); color: var(--accent-light); }
+  .nav-paper-btn .nav-arrow { margin-left: auto; transition: transform 0.2s; font-size: 10px; }
+  .nav-paper-btn.open .nav-arrow { transform: rotate(90deg); }
+
+  .nav-topics { display: none; padding-left: 8px; }
+  .nav-topics.open { display: block; }
+  .nav-topic-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.15s;
+  }
+  .nav-topic-link:hover { background: var(--surface2); color: var(--text); }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+  .nav-dot.done { background: var(--done); }
+
+  /* ── MAIN ── */
+  main {
+    padding: 32px 40px;
+    max-width: 900px;
+  }
+
+  .page-hero {
+    margin-bottom: 36px;
+  }
+  .page-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent-light);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .page-sub {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* Paper card */
+  .paper-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .paper-card:hover { border-color: var(--faint); }
+
+  .paper-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    cursor: pointer;
+    user-select: none;
+    gap: 12px;
+  }
+  .paper-header:hover .paper-title { color: var(--accent-light); }
+  .paper-title-area { flex: 1; min-width: 0; }
+  .paper-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .paper-title {
+    font-size: 16px;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+  .paper-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .mark-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 10px;
+    color: var(--muted);
+  }
+  .paper-pct-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-weight: 600;
+  }
+  .paper-pct-badge.empty { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .paper-pct-badge.partial { background: var(--warn-bg); color: var(--warn); border: 1px solid rgba(245,158,11,0.3); }
+  .paper-pct-badge.full { background: var(--done-bg); color: var(--done); border: 1px solid rgba(16,185,129,0.3); }
+  .chevron { color: var(--muted); font-size: 14px; transition: transform 0.25s; flex-shrink: 0; }
+  .paper-card.open .chevron { transform: rotate(180deg); }
+
+  .paper-bar-track {
+    height: 3px;
+    background: var(--border);
+    margin: 0 22px;
+  }
+  .paper-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--done));
+    transition: width 0.5s ease;
+    border-radius: 99px;
+  }
+
+  .paper-body { display: none; padding: 16px 22px 20px; }
+  .paper-card.open .paper-body { display: block; }
+
+  /* Topic row */
+  .topic-item {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: var(--surface2);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .topic-item.completed { border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.04); }
+
+  .topic-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+  }
+  .topic-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-top: 1px;
+    cursor: pointer;
+    background: transparent;
+  }
+  .topic-item.completed .topic-check {
+    background: var(--done);
+    border-color: var(--done);
+  }
+  .topic-check svg { display: none; }
+  .topic-item.completed .topic-check svg { display: block; }
+
+  .topic-info { flex: 1; min-width: 0; }
+  .topic-name {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    transition: color 0.2s;
+  }
+  .topic-item.completed .topic-name { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--faint); }
+
+  .topic-subtopics-preview {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-family: var(--mono);
+  }
+
+  .topic-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .icon-btn {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 4px 7px;
+    cursor: pointer;
+    color: var(--faint);
+    font-size: 13px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+  }
+  .icon-btn:hover { border-color: var(--border); color: var(--accent-light); background: var(--surface); }
+  .icon-btn.active { color: var(--accent-light); }
+
+  /* Expand area */
+  .topic-expand { display: none; padding: 0 14px 14px; border-top: 1px solid var(--border); }
+  .topic-item.expanded .topic-expand { display: block; }
+
+  .subtopics-list { padding-top: 10px; margin-bottom: 12px; }
+  .subtopic-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+  }
+  .sub-check {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+  }
+  .subtopic-row.sub-done .sub-check {
+    background: var(--done);
+    border-color: var(--done);
+  }
+  .sub-check svg { display: none; }
+  .subtopic-row.sub-done .sub-check svg { display: block; }
+  .sub-name {
+    font-size: 12.5px;
+    color: var(--muted);
+    flex: 1;
+    transition: all 0.2s;
+  }
+  .subtopic-row.sub-done .sub-name { text-decoration: line-through; color: var(--faint); }
+
+  /* Links section */
+  .links-area { margin-bottom: 10px; }
+  .links-area-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .link-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .link-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px 3px 8px;
+    font-size: 11px;
+    color: var(--accent-light);
+    text-decoration: none;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  .link-chip:hover { border-color: var(--accent); background: var(--accent-glow); }
+  .link-chip-del {
+    background: none;
+    border: none;
+    color: var(--faint);
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0 0 0 2px;
+    transition: color 0.15s;
+  }
+  .link-chip-del:hover { color: #F87171; }
+  .add-link-row { display: flex; gap: 6px; }
+  .txt-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 12px;
+    padding: 5px 10px;
+    outline: none;
+    transition: border-color 0.2s;
+    flex: 1;
+  }
+  .txt-input::placeholder { color: var(--faint); }
+  .txt-input:focus { border-color: var(--accent); }
+  .btn-add {
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-add:hover { background: #6D28D9; }
+
+  /* Notes */
+  .notes-area { margin-top: 10px; }
+  .notes-area-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .notes-ta {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 12.5px;
+    padding: 8px 10px;
+    resize: vertical;
+    min-height: 70px;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.5;
+  }
+  .notes-ta::placeholder { color: var(--faint); }
+  .notes-ta:focus { border-color: var(--accent); }
+  .notes-saved { font-size: 10px; color: var(--done); opacity: 0; transition: opacity 0.3s; font-family: var(--mono); margin-top: 4px; }
+  .notes-saved.show { opacity: 1; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 420px;
+    width: 90%;
+  }
+  .modal h3 { font-size: 16px; margin-bottom: 14px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .btn-danger { background: #DC2626; border: none; border-radius: 7px; color: #fff; font-size: 13px; padding: 8px 18px; cursor: pointer; transition: background 0.2s; }
+  .btn-danger:hover { background: #B91C1C; }
+  .btn-cancel { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; color: var(--muted); font-size: 13px; padding: 8px 18px; cursor: pointer; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { position: static; height: auto; }
+    main { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">ATO <span>// Syllabus Tracker</span></div>
+  <div class="header-actions">
+    <button class="btn-sm" onclick="resetAll()">↺ Reset All</button>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="progress-ring-wrap">
+      <div class="ring-container">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#7C3AED"/>
+              <stop offset="100%" stop-color="#10B981"/>
+            </linearGradient>
+          </defs>
+          <circle class="ring-bg" cx="60" cy="60" r="52"/>
+          <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52"/>
+        </svg>
+        <div class="ring-text">
+          <div class="ring-pct" id="ringPct">0%</div>
+          <div class="ring-label">Done</div>
+        </div>
+      </div>
+      <div class="progress-stats">
+        <div class="stat-box">
+          <div class="stat-num done" id="statDone">0</div>
+          <div class="stat-lbl">Completed</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num left" id="statLeft">0</div>
+          <div class="stat-lbl">Remaining</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="navTree"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+    <div class="page-hero">
+      <div class="page-eyebrow">Tripura Gazette · Feb 2026 · Schedule-VI</div>
+      <div class="page-title">Grade-IV Technical Examination</div>
+      <div class="page-sub">Track your preparation · Add notes & resources per topic</div>
+    </div>
+    <div id="paperCards"></div>
+  </main>
+</div>
+
+<!-- Reset Modal -->
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <h3>Reset All Progress?</h3>
+    <p>This will clear all completed topics, notes, and saved links. This action cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger" onclick="confirmReset()">Reset Everything</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────
+const SYLLABUS = [
+  {
+    id: "paper1",
+    label: "Paper I",
+    title: "General Ability Test",
+    marks: 50,
+    topics: [
+      {
+        id: "english",
+        name: "English",
+        subtopics: ["Synonyms & Antonyms","Common Phrases & Idioms","Prepositions & Articles","Comprehension","Ordering Words in a Sentence","Ordering of Sentences","Spotting Errors","Appropriate & Qualifying Words"]
+      },
+      {
+        id: "reasoning",
+        name: "General Mental Ability & Logical Reasoning",
+        subtopics: ["Logical Reasoning","Analytical Reasoning Capabilities","Quantitative Abilities","Qualitative Abilities","General Aptitude"]
+      },
+      {
+        id: "gk",
+        name: "General Knowledge & Current Affairs",
+        subtopics: ["General Knowledge (Tripura & NE States)","Elementary Indian History","Indian Geography","Current Events (Tripura)","Current Events (India & World)"]
+      }
+    ]
+  },
+  {
+    id: "paper2",
+    label: "Paper II",
+    title: "Technical Paper — CS & IT",
+    marks: 120,
+    topics: [
+      {
+        id: "engmath",
+        name: "Engineering Mathematics — Probability & Statistics",
+        subtopics: ["Random Variables","Uniform, Normal, Exponential, Poisson & Binomial Distributions","Mean, Median, Mode & Standard Deviation","Conditional Probability","Bayes Theorem"]
+      },
+      {
+        id: "digital",
+        name: "Digital Logic",
+        subtopics: ["Boolean Algebra","Combinational Circuits","Sequential Circuits","Minimization","Number Representations","Computer Arithmetic (Fixed & Floating Point)"]
+      },
+      {
+        id: "arch",
+        name: "Computer Organization & Architecture",
+        subtopics: ["Machine Instructions & Addressing Modes","ALU & Data Path","Control Unit","Instruction Pipelining","Pipeline Hazards","Memory Hierarchy (Cache, Main, Secondary)","I/O Interface (Interrupt & DMA Mode)"]
+      },
+      {
+        id: "comms",
+        name: "Analog & Digital Communication",
+        subtopics: ["Autocorrelation & Power Spectral Density","White Noise & LTI Systems","Amplitude Modulation & Demodulation","Angle Modulation & Demodulation","AM & FM Spectra","Super Heterodyne Receivers","Information Theory & Entropy","PCM, DPCM, Digital Modulation Schemes","ASK, PSK, FSK, QAM, MAP & ML Decoding","Matched Filter Receiver","Bandwidth, SNR & BER","Hamming Codes & Error Correction","TDMA, FDMA & CDMA"]
+      },
+      {
+        id: "ds",
+        name: "Data Structures & Programming",
+        subtopics: ["Arrays, Stacks & Queues","Linked Lists","Trees & Binary Search Trees","Binary Heaps","Graphs","Programming in C & C++","Programming in Java","Recursion"]
+      },
+      {
+        id: "algo",
+        name: "Algorithms",
+        subtopics: ["Searching & Sorting","Hashing","Asymptotic Complexity (Time & Space)","Greedy Algorithm Design","Dynamic Programming","Divide & Conquer","Graph Traversals","Minimum Spanning Trees","Shortest Paths"]
+      },
+      {
+        id: "compiler",
+        name: "Compiler Design",
+        subtopics: ["Lexical Analysis","Parsing","Syntax-Directed Translation","Runtime Environments","Intermediate Code Generation","Local Optimization","Data Flow Analyses (Constant Propagation, Liveness, CSE)"]
+      },
+      {
+        id: "os",
+        name: "Operating System",
+        subtopics: ["System Calls","Processes & Threads","Inter-Process Communication","Concurrency & Synchronization","Deadlock","CPU Scheduling","I/O Scheduling","Memory Management","Virtual Memory","File Systems"]
+      },
+      {
+        id: "db",
+        name: "Databases",
+        subtopics: ["ER Model","Relational Model (Algebra, Tuple Calculus, SQL)","Integrity Constraints","Normal Forms","File Organization & Indexing (B & B+ Trees)","Transactions","Concurrency Control"]
+      },
+      {
+        id: "se",
+        name: "Information Systems & Software Engineering",
+        subtopics: ["Information Gathering","Requirements & Feasibility Analysis","Data Flow Diagrams","Process Specifications","Input/Output Design","Process Life Cycle","Project Planning & Management","Design, Coding, Testing, Implementation & Maintenance"]
+      },
+      {
+        id: "networks",
+        name: "Computer Networks",
+        subtopics: ["OSI & TCP/IP Protocol Stacks","Packet, Circuit & Virtual Circuit Switching","Data Link Layer (Framing, Error Detection, MAC, Ethernet Bridging)","Routing Protocols (Shortest Path, Flooding, Distance Vector, Link State)","IP Addressing, IPv4, CIDR, Fragmentation","ARP, DHCP, ICMP, NAT","Transport Layer (Flow Control, Congestion, UDP, TCP, Sockets)","Application Layer (DNS, SMTP, HTTP, FTP, Email)"]
+      },
+      {
+        id: "web",
+        name: "Web Technologies",
+        subtopics: ["HTML5 & CSS3","XML","Client-Server Computing","Web Server & Proxy Server","Web Application Development","MVC Architecture","Web Services","Frontend Technologies"]
+      },
+      {
+        id: "security",
+        name: "Cyber Security & Emerging Technologies",
+        subtopics: ["Secure Programming Techniques","OWASP Top 10 Vulnerabilities","Concepts on IoT","Blockchain","Artificial Intelligence (AI)"]
+      },
+      {
+        id: "cloud",
+        name: "Cloud Technology",
+        subtopics: ["Cloud Computing","Compute Technologies","Network Technologies","Storage Management Technologies","Edge Computing"]
+      }
+    ]
+  }
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+const KEY = 'ato_tracker_v2';
+let state = loadState();
+
+function loadState() {
+  try {
+    return JSON.parse(localStorage.getItem(KEY)) || {};
+  } catch { return {}; }
+}
+function saveState() {
+  localStorage.setItem(KEY, JSON.stringify(state));
+}
+function getTopicState(topicId) {
+  return state[topicId] || { done: false, subs: {}, notes: '', links: [] };
+}
+function setTopicState(topicId, data) {
+  state[topicId] = data;
+  saveState();
+}
+
+// ── COUNTS ────────────────────────────────────────────────────────────────
+function countAll() {
+  let total = 0, done = 0;
+  SYLLABUS.forEach(paper => {
+    paper.topics.forEach(t => {
+      total++;
+      if (getTopicState(t.id).done) done++;
+    });
+  });
+  return { total, done };
+}
+function countPaper(paper) {
+  let total = paper.topics.length;
+  let done = paper.topics.filter(t => getTopicState(t.id).done).length;
+  return { total, done };
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function render() {
+  renderSidebar();
+  renderCards();
+  updateRing();
+}
+
+function updateRing() {
+  const { total, done } = countAll();
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const circ = 326.56;
+  const offset = circ - (circ * pct / 100);
+  document.getElementById('ringFill').style.strokeDashoffset = offset;
+  document.getElementById('ringPct').textContent = pct + '%';
+  document.getElementById('statDone').textContent = done;
+  document.getElementById('statLeft').textContent = total - done;
+}
+
+function renderSidebar() {
+  const nav = document.getElementById('navTree');
+  nav.innerHTML = SYLLABUS.map(paper => {
+    const { total, done } = countPaper(paper);
+    const pct = total ? Math.round((done/total)*100) : 0;
+    return `
+      <div class="nav-section">
+        <button class="nav-paper-btn" onclick="navToggle(this, '${paper.id}')">
+          <span style="font-size:9px">▶</span> ${paper.label}
+          <span style="margin-left:auto;color:var(--${pct===100?'done':'accent-light'});font-size:10px">${pct}%</span>
+          <span class="nav-arrow">›</span>
+        </button>
+        <div class="nav-topics" id="nav_${paper.id}">
+          ${paper.topics.map(t => {
+            const ts = getTopicState(t.id);
+            return `<div class="nav-topic-link" onclick="scrollToTopic('${t.id}')">
+              <div class="nav-dot ${ts.done?'done':''}"></div>
+              <span style="font-size:11px;line-height:1.3">${t.name}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function navToggle(btn, paperId) {
+  btn.classList.toggle('open');
+  const el = document.getElementById('nav_'+paperId);
+  el.classList.toggle('open');
+}
+
+function scrollToTopic(topicId) {
+  const el = document.getElementById('topic_'+topicId);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // expand it
+  const card = el.closest('.paper-card');
+  if (card && !card.classList.contains('open')) {
+    card.classList.add('open');
+  }
+  if (!el.classList.contains('expanded')) {
+    el.classList.add('expanded');
+  }
+}
+
+function renderCards() {
+  const container = document.getElementById('paperCards');
+  container.innerHTML = SYLLABUS.map(paper => {
+    const { total, done } = countPaper(paper);
+    const pct = total ? Math.round((done/total)*100) : 0;
+    const badgeCls = pct === 0 ? 'empty' : pct === 100 ? 'full' : 'partial';
+    return `
+      <div class="paper-card" id="pcard_${paper.id}">
+        <div class="paper-header" onclick="togglePaper('${paper.id}')">
+          <div class="paper-title-area">
+            <div class="paper-label">${paper.label} · ${paper.marks} Marks</div>
+            <div class="paper-title">${paper.title}</div>
+          </div>
+          <div class="paper-meta">
+            <span class="mark-badge">${done}/${total} topics</span>
+            <span class="paper-pct-badge ${badgeCls}">${pct}%</span>
+            <span class="chevron">▾</span>
+          </div>
+        </div>
+        <div class="paper-bar-track">
+          <div class="paper-bar-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="paper-body">
+          ${paper.topics.map(t => renderTopic(t, paper.id)).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderTopic(topic, paperId) {
+  const ts = getTopicState(topic.id);
+  const subCount = topic.subtopics.length;
+  const subDone = topic.subtopics.filter((_, i) => ts.subs[i]).length;
+
+  return `
+    <div class="topic-item ${ts.done?'completed':''}" id="topic_${topic.id}">
+      <div class="topic-row">
+        <div class="topic-check" onclick="toggleTopic('${topic.id}', '${paperId}')">
+          <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+            <path d="M1 4L4 7L10 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="topic-info" onclick="expandTopic('${topic.id}')">
+          <div class="topic-name">${topic.name}</div>
+          <div class="topic-subtopics-preview">${subDone}/${subCount} subtopics · ${ts.links&&ts.links.length?ts.links.length+' link(s)':''}</div>
+        </div>
+        <div class="topic-actions">
+          <button class="icon-btn ${ts.notes?'active':''}" title="Notes" onclick="expandTopic('${topic.id}')">📝</button>
+          <button class="icon-btn" title="Expand" onclick="expandTopic('${topic.id}')">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="topic-expand">
+        <!-- Subtopics -->
+        <div class="subtopics-list">
+          ${topic.subtopics.map((sub, i) => `
+            <div class="subtopic-row ${ts.subs[i]?'sub-done':''}" id="sub_${topic.id}_${i}">
+              <div class="sub-check" onclick="toggleSub('${topic.id}', ${i}, '${paperId}')">
+                <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                  <path d="M1 3.5L3.5 6L8 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <span class="sub-name">${sub}</span>
+            </div>`).join('')}
+        </div>
+
+        <!-- Links -->
+        <div class="links-area">
+          <div class="links-area-title">🔗 Resources & Links</div>
+          <div class="link-list" id="links_${topic.id}">
+            ${(ts.links||[]).map((l,i) => `
+              <span class="link-chip">
+                <a href="${l.url}" target="_blank" style="color:inherit;text-decoration:none">🔗 ${l.label||l.url}</a>
+                <button class="link-chip-del" onclick="removeLink('${topic.id}',${i},'${paperId}')">×</button>
+              </span>`).join('')}
+          </div>
+          <div class="add-link-row">
+            <input class="txt-input" id="linkLabel_${topic.id}" placeholder="Label (e.g. GeeksForGeeks)">
+            <input class="txt-input" id="linkUrl_${topic.id}" placeholder="https://...">
+            <button class="btn-add" onclick="addLink('${topic.id}','${paperId}')">Add</button>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="notes-area">
+          <div class="notes-area-title">📋 Notes</div>
+          <textarea class="notes-ta" id="notes_${topic.id}" placeholder="Add study notes, formulas, mnemonics…" oninput="saveNotes('${topic.id}','${paperId}')">${ts.notes||''}</textarea>
+          <div class="notes-saved" id="notesaved_${topic.id}">✓ Saved</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── INTERACTIONS ──────────────────────────────────────────────────────────
+function togglePaper(paperId) {
+  document.getElementById('pcard_'+paperId).classList.toggle('open');
+}
+
+function expandTopic(topicId) {
+  const el = document.getElementById('topic_'+topicId);
+  el.classList.toggle('expanded');
+}
+
+function toggleTopic(topicId, paperId) {
+  const ts = getTopicState(topicId);
+  ts.done = !ts.done;
+  setTopicState(topicId, ts);
+  // reflect
+  const el = document.getElementById('topic_'+topicId);
+  el.classList.toggle('completed', ts.done);
+  // update rings
+  updateRing();
+  updatePaperBadge(paperId);
+  updateNavDot(topicId, ts.done);
+}
+
+function toggleSub(topicId, idx, paperId) {
+  const ts = getTopicState(topicId);
+  ts.subs = ts.subs || {};
+  ts.subs[idx] = !ts.subs[idx];
+  setTopicState(topicId, ts);
+  const row = document.getElementById('sub_'+topicId+'_'+idx);
+  row.classList.toggle('sub-done', ts.subs[idx]);
+  // update preview count
+  const topic = SYLLABUS.flatMap(p=>p.topics).find(t=>t.id===topicId);
+  const subDone = topic.subtopics.filter((_,i)=>ts.subs[i]).length;
+  const preview = document.querySelector('#topic_'+topicId+' .topic-subtopics-preview');
+  if (preview) preview.textContent = subDone+'/'+topic.subtopics.length+' subtopics · '+(ts.links&&ts.links.length?ts.links.length+' link(s)':'');
+}
+
+function addLink(topicId, paperId) {
+  const labelEl = document.getElementById('linkLabel_'+topicId);
+  const urlEl = document.getElementById('linkUrl_'+topicId);
+  const url = urlEl.value.trim();
+  if (!url) return;
+  const label = labelEl.value.trim() || url;
+  const ts = getTopicState(topicId);
+  ts.links = ts.links || [];
+  ts.links.push({ label, url });
+  setTopicState(topicId, ts);
+  labelEl.value = ''; urlEl.value = '';
+  // re-render link list only
+  refreshLinks(topicId, paperId);
+  const preview = document.querySelector('#topic_'+topicId+' .topic-subtopics-preview');
+  if (preview) {
+    const topic = SYLLABUS.flatMap(p=>p.topics).find(t=>t.id===topicId);
+    const subDone = topic.subtopics.filter((_,i)=>ts.subs[i]).length;
+    preview.textContent = subDone+'/'+topic.subtopics.length+' subtopics · '+(ts.links.length?ts.links.length+' link(s)':'');
+  }
+}
+
+function removeLink(topicId, idx, paperId) {
+  const ts = getTopicState(topicId);
+  ts.links.splice(idx, 1);
+  setTopicState(topicId, ts);
+  refreshLinks(topicId, paperId);
+}
+
+function refreshLinks(topicId, paperId) {
+  const ts = getTopicState(topicId);
+  const el = document.getElementById('links_'+topicId);
+  if (!el) return;
+  el.innerHTML = (ts.links||[]).map((l,i)=>`
+    <span class="link-chip">
+      <a href="${l.url}" target="_blank" style="color:inherit;text-decoration:none">🔗 ${l.label||l.url}</a>
+      <button class="link-chip-del" onclick="removeLink('${topicId}',${i},'${paperId}')">×</button>
+    </span>`).join('');
+}
+
+let noteTimers = {};
+function saveNotes(topicId, paperId) {
+  clearTimeout(noteTimers[topicId]);
+  noteTimers[topicId] = setTimeout(() => {
+    const ta = document.getElementById('notes_'+topicId);
+    const ts = getTopicState(topicId);
+    ts.notes = ta.value;
+    setTopicState(topicId, ts);
+    const saved = document.getElementById('notesaved_'+topicId);
+    if (saved) { saved.classList.add('show'); setTimeout(()=>saved.classList.remove('show'), 1500); }
+    // update note icon
+    const noteBtn = document.querySelector(`#topic_${topicId} .icon-btn`);
+    if (noteBtn) noteBtn.classList.toggle('active', !!ta.value);
+  }, 600);
+}
+
+function updatePaperBadge(paperId) {
+  const paper = SYLLABUS.find(p=>p.id===paperId);
+  if (!paper) return;
+  const { total, done } = countPaper(paper);
+  const pct = total ? Math.round((done/total)*100) : 0;
+  const badgeCls = pct===0?'empty':pct===100?'full':'partial';
+  const card = document.getElementById('pcard_'+paperId);
+  if (!card) return;
+  const badge = card.querySelector('.paper-pct-badge');
+  const countBadge = card.querySelector('.mark-badge');
+  const bar = card.querySelector('.paper-bar-fill');
+  if (badge) { badge.className = 'paper-pct-badge '+badgeCls; badge.textContent = pct+'%'; }
+  if (countBadge) countBadge.textContent = done+'/'+total+' topics';
+  if (bar) bar.style.width = pct+'%';
+  // update nav pct
+  const navBtn = document.querySelector(`#nav_${paperId}`)?.previousElementSibling;
+  if (navBtn) {
+    const pctSpan = navBtn.querySelector('span[style*="color"]');
+    if (pctSpan) { pctSpan.style.color = `var(--${pct===100?'done':'accent-light'})`; pctSpan.textContent = pct+'%'; }
+  }
+}
+
+function updateNavDot(topicId, done) {
+  document.querySelectorAll('.nav-topic-link').forEach(el => {
+    if (el.getAttribute('onclick')?.includes(topicId)) {
+      const dot = el.querySelector('.nav-dot');
+      if (dot) dot.classList.toggle('done', done);
+    }
+  });
+}
+
+// ── RESET ─────────────────────────────────────────────────────────────────
+function resetAll() { document.getElementById('resetModal').classList.add('open'); }
+function closeModal() { document.getElementById('resetModal').classList.remove('open'); }
+function confirmReset() {
+  localStorage.removeItem(KEY);
+  state = {};
+  closeModal();
+  render();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+render();
+// Open Paper I by default
+document.getElementById('pcard_paper1')?.classList.add('open');
+</script>
+</body>
+</html>
