@@ -344,25 +344,36 @@
     cursor: pointer;
   }
   .topic-check {
-    width: 20px;
-    height: 20px;
-    border-radius: 5px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
     border: 2px solid var(--border);
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
     margin-top: 1px;
     cursor: pointer;
-    background: transparent;
+    background: var(--bg);
+  }
+  .topic-check:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-glow);
   }
   .topic-item.completed .topic-check {
     background: var(--done);
     border-color: var(--done);
+    box-shadow: 0 0 0 4px var(--done-bg);
+    transform: scale(1.05);
   }
-  .topic-check svg { display: none; }
-  .topic-item.completed .topic-check svg { display: block; }
+  .topic-check svg {
+    display: block;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .topic-item.completed .topic-check svg { opacity: 1; transform: scale(1); }
 
   .topic-info { flex: 1; min-width: 0; }
   .topic-name {
@@ -409,28 +420,41 @@
   .subtopic-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 5px 0;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    transition: background 0.15s;
   }
+  .subtopic-row:hover { background: var(--surface); }
   .sub-check {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
     border: 1.5px solid var(--border);
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
-    background: transparent;
+    transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    background: var(--bg);
+  }
+  .sub-check:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
   }
   .subtopic-row.sub-done .sub-check {
     background: var(--done);
     border-color: var(--done);
+    transform: scale(1.05);
   }
-  .sub-check svg { display: none; }
-  .subtopic-row.sub-done .sub-check svg { display: block; }
+  .sub-check svg {
+    display: block;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .subtopic-row.sub-done .sub-check svg { opacity: 1; transform: scale(1); }
   .sub-name {
     font-size: 12.5px;
     color: var(--muted);
@@ -578,6 +602,7 @@
 <header>
   <div class="logo">ATO <span>// Syllabus Tracker</span></div>
   <div class="header-actions">
+    <button class="btn-sm" onclick="window.open('./syllabus_ato.pdf','_blank')">📄 Syllabus PDF</button>
     <button class="btn-sm" onclick="resetAll()">↺ Reset All</button>
   </div>
 </header>
@@ -605,7 +630,7 @@
       <div class="progress-stats">
         <div class="stat-box">
           <div class="stat-num done" id="statDone">0</div>
-          <div class="stat-lbl">Completed</div>
+          <div class="stat-lbl">Subtopics Done</div>
         </div>
         <div class="stat-box">
           <div class="stat-num left" id="statLeft">0</div>
@@ -771,15 +796,20 @@ function countAll() {
   let total = 0, done = 0;
   SYLLABUS.forEach(paper => {
     paper.topics.forEach(t => {
-      total++;
-      if (getTopicState(t.id).done) done++;
+      const ts = getTopicState(t.id);
+      total += t.subtopics.length;
+      done += t.subtopics.filter((_, i) => ts.subs[i]).length;
     });
   });
   return { total, done };
 }
 function countPaper(paper) {
-  let total = paper.topics.length;
-  let done = paper.topics.filter(t => getTopicState(t.id).done).length;
+  let total = 0, done = 0;
+  paper.topics.forEach(t => {
+    const ts = getTopicState(t.id);
+    total += t.subtopics.length;
+    done += t.subtopics.filter((_, i) => ts.subs[i]).length;
+  });
   return { total, done };
 }
 
@@ -859,7 +889,7 @@ function renderCards() {
             <div class="paper-title">${paper.title}</div>
           </div>
           <div class="paper-meta">
-            <span class="mark-badge">${done}/${total} topics</span>
+            <span class="mark-badge">${done}/${total} subtopics</span>
             <span class="paper-pct-badge ${badgeCls}">${pct}%</span>
             <span class="chevron">▾</span>
           </div>
@@ -941,7 +971,7 @@ function renderTopic(topic, paperId) {
     </div>`;
 }
 
-// ── INTERACTIONS ──────────────────────────────────────────���───────────────
+// ── INTERACTIONS ──────────────────────────────────────────────────────────
 function togglePaper(paperId) {
   document.getElementById('pcard_'+paperId).classList.toggle('open');
 }
@@ -953,11 +983,23 @@ function expandTopic(topicId) {
 
 function toggleTopic(topicId, paperId) {
   const ts = getTopicState(topicId);
+  const topic = SYLLABUS.flatMap(p=>p.topics).find(t=>t.id===topicId);
   ts.done = !ts.done;
+  ts.subs = ts.subs || {};
+  topic.subtopics.forEach((_, i) => { ts.subs[i] = ts.done; });
   setTopicState(topicId, ts);
-  // reflect
+  // reflect topic checkbox
   const el = document.getElementById('topic_'+topicId);
   el.classList.toggle('completed', ts.done);
+  // reflect subtopic rows
+  topic.subtopics.forEach((_, i) => {
+    const row = document.getElementById('sub_'+topicId+'_'+i);
+    if (row) row.classList.toggle('sub-done', ts.done);
+  });
+  // update preview
+  const subDone = topic.subtopics.filter((_,i)=>ts.subs[i]).length;
+  const preview = document.querySelector('#topic_'+topicId+' .topic-subtopics-preview');
+  if (preview) preview.textContent = subDone+'/'+topic.subtopics.length+' subtopics · '+(ts.links&&ts.links.length?ts.links.length+' link(s)':'');
   // update rings
   updateRing();
   updatePaperBadge(paperId);
@@ -968,14 +1010,25 @@ function toggleSub(topicId, idx, paperId) {
   const ts = getTopicState(topicId);
   ts.subs = ts.subs || {};
   ts.subs[idx] = !ts.subs[idx];
+  const topic = SYLLABUS.flatMap(p=>p.topics).find(t=>t.id===topicId);
+  const subDone = topic.subtopics.filter((_,i)=>ts.subs[i]).length;
+  const wasDone = ts.done;
+  ts.done = subDone === topic.subtopics.length;
   setTopicState(topicId, ts);
   const row = document.getElementById('sub_'+topicId+'_'+idx);
   row.classList.toggle('sub-done', ts.subs[idx]);
   // update preview count
-  const topic = SYLLABUS.flatMap(p=>p.topics).find(t=>t.id===topicId);
-  const subDone = topic.subtopics.filter((_,i)=>ts.subs[i]).length;
   const preview = document.querySelector('#topic_'+topicId+' .topic-subtopics-preview');
   if (preview) preview.textContent = subDone+'/'+topic.subtopics.length+' subtopics · '+(ts.links&&ts.links.length?ts.links.length+' link(s)':'');
+  // reflect topic-level completion if it changed
+  if (ts.done !== wasDone) {
+    const topicEl = document.getElementById('topic_'+topicId);
+    if (topicEl) topicEl.classList.toggle('completed', ts.done);
+    updateNavDot(topicId, ts.done);
+  }
+  // update rings & badges (subtopic-level progress)
+  updateRing();
+  updatePaperBadge(paperId);
 }
 
 function addLink(topicId, paperId) {
@@ -1045,7 +1098,7 @@ function updatePaperBadge(paperId) {
   const countBadge = card.querySelector('.mark-badge');
   const bar = card.querySelector('.paper-bar-fill');
   if (badge) { badge.className = 'paper-pct-badge '+badgeCls; badge.textContent = pct+'%'; }
-  if (countBadge) countBadge.textContent = done+'/'+total+' topics';
+  if (countBadge) countBadge.textContent = done+'/'+total+' subtopics';
   if (bar) bar.style.width = pct+'%';
   // update nav pct
   const navBtn = document.querySelector(`#nav_${paperId}`)?.previousElementSibling;
