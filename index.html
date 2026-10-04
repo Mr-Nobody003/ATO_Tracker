@@ -40,7 +40,7 @@
   .hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;position:relative;flex-wrap:wrap;}
   .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-dim);margin:0 0 6px;}
   .hero-title{font-family:var(--font-display);font-weight:700;font-size:26px;margin:0;letter-spacing:-.01em;}
-  .hero-title span{color:var(--accent);}
+  .hero-title span{color:var(--hot,var(--accent));}
   .hero-sub{font-size:13px;color:var(--text-dim);margin:6px 0 0;}
   .stat-block{text-align:right;position:relative;}
   .stat-percent{font-family:var(--font-mono);font-size:40px;font-weight:600;color:var(--accent);line-height:1;}
@@ -78,7 +78,7 @@
   .module-meta{display:flex;align-items:center;gap:10px;}
   .module-count{font-family:var(--font-mono);font-size:11.5px;color:var(--text-faint);display:none;}
   @media(min-width:520px){.module-count{display:block;}}
-  .module-pct{font-family:var(--font-mono);font-size:12.5px;color:var(--text-dim);min-width:34px;text-align:right;}
+  .module-pct{font-family:var(--font-mono);font-size:12.5px;color:var(--pct,var(--text-dim));min-width:34px;text-align:right;}
   .mini-bar{width:64px;height:5px;border-radius:3px;background:var(--copper-dim);overflow:hidden;display:none;}
   @media(min-width:520px){.mini-bar{display:block;}}
   .mini-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .5s;}
@@ -174,7 +174,8 @@
 
 
   /* ---- refined theme overrides: graphite + blue, green for completed ---- */
-  .hero{background:var(--panel);border-top:2px solid var(--accent);}
+  .hero{background:var(--panel);}
+  .hero::after{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--stripe,var(--accent));pointer-events:none;}
   .hero::before{display:none;}
   .hero-title{letter-spacing:-.02em;font-size:28px;}
   .charge-fill{background:linear-gradient(90deg,var(--accent),var(--done));box-shadow:none;}
@@ -192,10 +193,10 @@
   .topic.completed{border-color:var(--done-line);}
   .check.on{background:var(--done);border-color:var(--done);}
   .check:hover{border-color:var(--accent);}
-  .note-dot{background:var(--accent);}
+  .note-dot{background:var(--hot,var(--accent));}
   .res-form input,.notes-ta{background:var(--bg);}
   .res-form button,.modal-actions .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);}
-  .tpct{color:var(--text-dim);}
+  .tpct{color:var(--pct,var(--text-dim));}
   .topic.completed .tpct{color:var(--done);}
   .sub:hover{background:var(--panel);}
   .btn:hover{border-color:var(--accent);color:var(--text);}
@@ -293,7 +294,7 @@
   .theme-card{background:var(--c-bg);border:1px solid var(--c-line);border-radius:9px;padding:10px 11px;display:flex;flex-direction:column;gap:8px;text-align:left;transition:transform .12s,border-color .15s;min-width:0;}
   .theme-card:hover{transform:translateY(-1px);border-color:var(--c-accent);}
   .theme-card.active{outline:2px solid var(--accent);outline-offset:2px;}
-  .tc-name{font-family:var(--font-mono);font-size:12px;color:var(--c-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px;}
+  .tc-name{font-family:var(--font-mono);font-size:12px;line-height:1.3;color:var(--c-text);display:flex;align-items:center;gap:6px;overflow-wrap:anywhere;}
   .tc-name svg{width:12px;height:12px;color:var(--c-accent);flex:none;display:none;}
   .theme-card.active .tc-name svg{display:block;}
   .tc-bar{display:flex;gap:5px;align-items:center;}
@@ -319,6 +320,8 @@
 // ── THEMES — [id, name, bg, panel, panel-2, line, text, muted, accent, done] ──
 (function(){
   var T = [
+    ['golden-summer','Golden Summer Glow','#0a0c26','#10133a','#171b4d','#0d3b66','#f4d35e','#b3a05a','#ee964b','#faf0ca','#f95738',{hot:'#f95738',pct:'#f4d35e',stripe:'linear-gradient(90deg,#0d3b66 0 20%,#faf0ca 20% 40%,#f4d35e 40% 60%,#ee964b 60% 80%,#f95738 80% 100%)'}],
+    ['golden-summer-light','Golden Summer Light','#faf0ca','#fffbea','#f7ebbd','#e3d49a','#0d3b66','#5a7691','#f95738','#0d3b66','#f95738',{stripe:'linear-gradient(90deg,#0d3b66 0 20%,#faf0ca 20% 40%,#f4d35e 40% 60%,#ee964b 60% 80%,#f95738 80% 100%)'}],
     ['graphite','Graphite','#0d1117','#151b23','#1b232d','#283140','#e6edf3','#8b97a8','#4f9cf9','#34d399'],
     ['serika','Serika Dark','#242628','#2c2e31','#323437','#43464a','#d1d0c5','#8a8c8e','#e2b714','#8fbf6a'],
     ['dracula','Dracula','#1e1f29','#282a36','#303243','#44475a','#f8f8f2','#8b95c9','#bd93f9','#50fa7b'],
@@ -343,7 +346,7 @@
     ['solarized-light','Solarized Light','#fdf6e3','#fffcf2','#f5efdc','#e0d9c3','#586e75','#839496','#268bd2','#859900'],
     ['latte','Catppuccin Latte','#e6e9ef','#f5f6fa','#eceef4','#ccd0da','#4c4f69','#7c7f93','#8839ef','#40a02b'],
     ['rose-dawn','Rosé Pine Dawn','#f2e9e1','#faf4ed','#f4ede8','#dfdad9','#575279','#797593','#d7827e','#56949f']
-  ].map(function(a){ return {id:a[0],name:a[1],c:{bg:a[2],panel:a[3],panel2:a[4],line:a[5],text:a[6],dim:a[7],accent:a[8],done:a[9]}}; });
+  ].map(function(a){ return {id:a[0],name:a[1],c:{bg:a[2],panel:a[3],panel2:a[4],line:a[5],text:a[6],dim:a[7],accent:a[8],done:a[9],danger:a[10]},x:a[11]||{}}; });
 
   function rgb(h){ h=h.replace('#',''); return [0,2,4].map(function(i){return parseInt(h.substr(i,2),16);}); }
   function hex(a){ return '#'+a.map(function(v){v=Math.max(0,Math.min(255,Math.round(v)));return (v<16?'0':'')+v.toString(16);}).join(''); }
@@ -358,17 +361,18 @@
     var c=t.c;
     return {
       '--bg':c.bg,'--panel':c.panel,'--panel-2':c.panel2,'--line':c.line,
-      '--text':c.text,'--text-dim':c.dim,'--text-faint':mix(c.dim,c.bg,t.light?.25:.5),
+      '--text':c.text,'--text-dim':c.dim,'--text-faint':mix(c.dim,c.bg,t.light?.25:.38),
       '--copper':mix(c.line,c.dim,.35),'--copper-dim':c.line,
       '--accent':c.accent,'--accent-2':mix(c.accent,c.text,.22),'--accent-soft':a(c.accent,.16),
       '--done':c.done,'--done-soft':a(c.done,.16),'--done-line':a(c.done,.34),
       '--glow':a(c.accent,t.light?.1:.08),
       '--on-accent':ink(c.accent),'--on-done':ink(c.done),
-      '--danger':t.light?'#cf222e':'#f87171',
+      '--danger':c.danger||(t.light?'#cf222e':'#f87171'),
+      '--hot':(t.x.hot||c.accent),'--pct':(t.x.pct||c.dim),'--stripe':(t.x.stripe||c.accent),
       '--overlay':a(c.bg,.8)
     };
   }
-  var current = 'graphite';
+  var current = 'golden-summer';
   window.ATO_THEMES = T;
   window.atoThemeId = function(){ return current; };
   window.atoApplyTheme = function(id, persist){
@@ -393,7 +397,7 @@
   <div class="hero">
     <div class="hero-top">
       <div>
-        <p class="eyebrow">Tripura Gazette · JAN 2027 · Schedule-VI · Grade-IV Technical</p>
+        <p class="eyebrow">Tripura Gazette · Feb 2026 · Schedule-VI · Grade-IV Technical</p>
         <h1 class="hero-title">ATO<span>.</span>TRACKER</h1>
         <p class="hero-sub">Track your preparation · notes &amp; resources per topic</p>
       </div>
